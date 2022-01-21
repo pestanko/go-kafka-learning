@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/Shopify/sarama"
 )
 
@@ -12,7 +15,7 @@ type AppConfig struct {
 
 func main() {
 	cfg := AppConfig{
-		brokers: []string{"localhost:29202"},
+		brokers: []string{"localhost:29092"},
 		topic:   "simple-topic",
 	}
 	fmt.Printf("Trying to attach to kafka brokers: %v\n", cfg.brokers)
@@ -22,7 +25,14 @@ func main() {
 		panic(err)
 	}
 
-	msg := "Hello world!"
+	for i := 0; i < 100; i++ {
+		sendMessage(&cfg, producer, i)
+		time.Sleep(time.Millisecond * 200)
+	}
+}
+
+func sendMessage(cfg *AppConfig, producer sarama.SyncProducer, id int) {
+	msg := fmt.Sprintf("%v: Hello world!", id)
 	var partition int32 = -1
 	message := &sarama.ProducerMessage{
 		Topic:     cfg.topic,
@@ -34,7 +44,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Partition: %v; Offset: %v\n", partition, offset)
+	log.Printf("Partition: %v; Offset: %v\n", partition, offset)
 }
 
 func makeSaramaConfig() *sarama.Config {
